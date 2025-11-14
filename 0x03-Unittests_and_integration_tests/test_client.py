@@ -16,8 +16,14 @@ class TestGithubOrgClient(unittest.TestCase):
     ])
     @patch('client.get_json')
     def test_org(self, org_name, mock_get_json):
-        """Tests GithubOrgClient.org returns mocked payload and calls get_json once."""
-        test_payload = {"repos_url": f"https://api.github.com/orgs/{org_name}/repos"}
+        """
+        Tests that GithubOrgClient.org returns mocked payload and calls
+        get_json once.
+        """
+        test_payload = {
+            "repos_url":
+                f"https://api.github.com/orgs/{org_name}/repos"
+        }
         mock_get_json.return_value = test_payload
 
         client = GithubOrgClient(org_name)
@@ -33,9 +39,11 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"repos_url": "http://repos2"}, "http://repos2"),
     ])
     def test_public_repos_url(self, payload, expected):
-        """Tests GithubOrgClient._public_repos_url returns expected repos_url."""
+        """Tests that _public_repos_url returns the expected URL."""
         with patch.object(
-            GithubOrgClient, 'org', new_callable=PropertyMock
+            GithubOrgClient,
+            'org',
+            new_callable=PropertyMock
         ) as mock_org:
             mock_org.return_value = payload
             client = GithubOrgClient('test')
@@ -43,7 +51,7 @@ class TestGithubOrgClient(unittest.TestCase):
 
     @patch('client.get_json')
     def test_public_repos(self, mock_get_json):
-        """Tests GithubOrgClient.public_repos returns expected repos list."""
+        """Tests that public_repos returns expected list of repo names."""
         repos_payload = [
             {"name": "repo1", "license": {"key": "mit"}},
             {"name": "repo2", "license": {"key": "apache-2.0"}},
@@ -51,7 +59,9 @@ class TestGithubOrgClient(unittest.TestCase):
         mock_get_json.return_value = repos_payload
 
         with patch.object(
-            GithubOrgClient, '_public_repos_url', new_callable=PropertyMock
+            GithubOrgClient,
+            '_public_repos_url',
+            new_callable=PropertyMock
         ) as mock_url:
             mock_url.return_value = "http://fake/repos"
             client = GithubOrgClient('test')
