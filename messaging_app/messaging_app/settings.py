@@ -1,3 +1,4 @@
+# messaging_app/settings.py
 """
 Django settings for messaging_app project.
 

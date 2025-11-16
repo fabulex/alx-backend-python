@@ -1,3 +1,4 @@
+# chats/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Conversation, Message
@@ -10,14 +11,14 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ('role', 'is_staff', 'is_superuser', 'created_at')
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('-created_at',)
-    readonly_fields = ('id', 'created_at')
+    readonly_fields = ('user_id', 'created_at')
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal Info', {'fields': ('first_name', 'last_name', 'phone_number', 'role')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important Dates', {'fields': ('last_login', 'created_at')}),
-        ('Custom ID', {'fields': ('id',)}),
+        ('Custom ID', {'fields': ('user_id',)}),
     )
 
     add_fieldsets = (
@@ -38,10 +39,10 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
     """Admin for Conversation model."""
-    list_display = ('id', 'created_at', 'participant_count')
+    list_display = ('conversation_id', 'created_at', 'participant_count')
     list_filter = ('created_at',)
-    search_fields = ('id',)
-    readonly_fields = ('id', 'created_at')
+    search_fields = ('conversation_id',)
+    readonly_fields = ('conversation_id', 'created_at')
     filter_horizontal = ('participants',)  # For better UX in adding/removing participants
 
     def participant_count(self, obj):
@@ -53,10 +54,10 @@ class ConversationAdmin(admin.ModelAdmin):
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
     """Admin for Message model."""
-    list_display = ('id', 'sender', 'conversation', 'sent_at', 'message_preview')
+    list_display = ('message_id', 'sender', 'conversation', 'sent_at', 'message_preview')
     list_filter = ('sent_at', 'sender', 'conversation')
-    search_fields = ('message_body', 'sender__email', 'conversation__id')
-    readonly_fields = ('id', 'sent_at')
+    search_fields = ('message_body', 'sender__email', 'conversation__conversation_id')
+    readonly_fields = ('message_id', 'sent_at')
     date_hierarchy = 'sent_at'
 
     def message_preview(self, obj):
