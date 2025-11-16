@@ -34,7 +34,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     """Custom User model extending AbstractUser"""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     first_name = models.CharField(max_length=255, blank=False, null=False)
     last_name = models.CharField(max_length=255, blank=False, null=False)
     email = models.EmailField(unique=True, blank=False, null=False)
@@ -61,21 +61,21 @@ class User(AbstractUser):
 
 class Conversation(models.Model):
     """Model representing a conversation between users"""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    participants = models.ManyToManyField(User, related_name='conversations')
+    conversation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    participants = models.ManyToManyField(User, related_name='conversations', to_field='user_id')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Conversation {self.id}"
+        return f"Conversation {self.conversation_id}"
 
 
 class Message(models.Model):
     """Model representing a message in a conversation"""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages', to_field='user_id')
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages', to_field='conversation_id')
     message_body = models.TextField(blank=False, null=False)
     sent_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Message {self.id} by {self.sender.email}"
+        return f"Message {self.message_id} by {self.sender.email}"
