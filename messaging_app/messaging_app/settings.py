@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'chats',
 ]
 
+# Use the custom user model defined in chats app
+AUTH_USER_MODEL = "chats.User"
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
