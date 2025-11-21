@@ -62,7 +62,7 @@ class User(AbstractUser):
 class Conversation(models.Model):
     """Model representing a conversation between users"""
     conversation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    participants = models.ManyToManyField(User, related_name='conversations', to_field='user_id')
+    participants = models.ManyToManyField(User, related_name='conversations')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
