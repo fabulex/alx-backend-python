@@ -155,8 +155,11 @@ class MessageViewSet(viewsets.ModelViewSet):
     - retrieve/update/destroy: only sender can modify
     """
     serializer_class = MessageSerializer
-    filter_backends = [filters.OrderingFilter]
+    filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
     ordering_fields = ['sent_at']
+    ordering = ['-sent_at']             # Default: newest first
+    filterset_class = MessageFilter
+    pagination_class = MessagePagination
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:

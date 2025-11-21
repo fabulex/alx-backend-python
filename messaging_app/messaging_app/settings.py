@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',  # Added for JWT authentication
     # 'rest_framework_simplejwt.token_blacklist', # For token blacklisting on logout
+    'django_filters',
     'chats',  # The app containing the custom User model and other models
 ]
 
@@ -137,6 +138,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
@@ -145,8 +150,11 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',  # Session auth for browsable API
         'rest_framework.authentication.BasicAuthentication',  # Basic auth fallback
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 50,
+    'DEFAULT_PAGINATION_CLASSES': [
+        'chats.pagination.MessagePagination'
+        'rest_framework.pagination.PageNumberPagination',
+    ]
+    'PAGE_SIZE': 20,
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle'
