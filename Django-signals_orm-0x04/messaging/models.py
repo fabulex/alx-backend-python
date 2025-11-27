@@ -1,21 +1,14 @@
 #!/usr/bin/env python3
 """Models for the messaging application."""
 
-from typing import TYPE_CHECKING
-
 from django.db import models
 from django.contrib.auth import get_user_model
-
-if TYPE_CHECKING:
-    from django.contrib.auth.models import User
-
 
 User = get_user_model()
 
 
 class Message(models.Model):
-    """Represents a private message sent between users."""
-
+    """Represents a private message with edit tracking."""
     sender = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -28,48 +21,33 @@ class Message(models.Model):
     )
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    edited_at = models.DateTimeField(null=True, blank=True)  # Tracks last edit
     is_read = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-timestamp"]
         indexes = [
             models.Index(fields=["receiver", "-timestamp"]),
-            models.Index(fields=["sender", "-timestamp"]),
         ]
 
     def __str__(self) -> str:
-        """Return a short representation of the message."""
-        return f"{self.sender} → {self.receiver}: {self.content[:30]}..."
+        edited = " (edited)" if self.edited_at else ""
+        return f"{self.sender} → {self.receiver}: {self.content[:30]}{edited}"
 
 
-
-class Notification(models.Model):
-    """Notification generated when a user receives a new message."""
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="notifications",
-    )
+class MessageHistory(models.Model):
+    """Stores previous versions of edited messages."""
     message = models.ForeignKey(
         Message,
         on_delete=models.CASCADE,
-        related_name="notifications",
+        related_name="history",
     )
-    is_seen = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    old_content = models.TextField()
+    edited_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ["user", "message"]
-        ordering = ["-created_at"]
-        indexes = [
-            models.Index(fields=["user", "is_seen"]),
-        ]
+        ordering = ["-edited_at"]
+        verbose_name_plural = "Message History"
 
     def __str__(self) -> str:
-        """Return string representation of the notification."""
-        sender = self.message.sender
-        return f"Notification → {self.user}: New message from {sender}"
-
-
-# Required final newline
+        return f"History #{self.pk} for Message #{self.message.id} ({self.edited_at.date()})"

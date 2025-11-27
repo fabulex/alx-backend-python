@@ -1,35 +1,26 @@
 #!/usr/bin/env python3
-"""Signal handlers for automatic notification creation."""
+"""Signal handler for logging message edit history."""
 
-from messaging.models import Message, Notification
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from django.utils import timezone
+from messaging.models import Message, MessageHistory
 
 
-@receiver(post_save, sender=Message)
-def create_message_notification(
-    sender,
-    instance: Message,
-    created: bool,
-    **kwargs,
-) -> None:
-    """
-    Create a notification when a new message is sent to another user.
-
-    Skips creation if:
-    - The save is an update (not creation)
-    - The sender and receiver are the same user
-    """
-    if not created:
+@receiver(pre_save, sender=Message)
+def log_message_edit_history(sender, instance: Message, **kwargs) -> None:
+    """Save old content before update and mark message as edited."""
+    if not instance.pk:  # New message
         return
 
-    if instance.sender == instance.receiver:
+    try:
+        old = Message.objects.get(pk=instance.pk)
+    except Message.DoesNotExist:
         return
 
-    Notification.objects.create(
-        user=instance.receiver,
-        message=instance,
-    )
-
-
-# Required final newline
+    if old.content != instance.content:
+        MessageHistory.objects.create(
+            message=instance,
+            old_content=old.content,
+        )
+        instance.edited_at = timezone.now()
