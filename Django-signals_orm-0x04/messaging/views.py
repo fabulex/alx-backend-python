@@ -1,32 +1,35 @@
 #!/usr/bin/env python3
-"""Views for messaging app — including account deletion."""
+"""Views for threaded conversations."""
 
+from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.shortcuts import redirect
-from django.contrib.auth import logout
+from django.db.models import Prefetch
+
+from .models import Message
 
 
 @login_required
-def delete_user(request):
-    """
-    Allow authenticated user to permanently delete their account.
-    All data is cleaned up automatically via CASCADE + signal.
-    """
-    if request.method == "POST":
-        user = request.user
-        username = user.username
+def conversation_thread(request, message_id):
+    """Display full conversation thread with optimized queries."""
+    root_message = get_object_or_404(
+        Message,
+        id=message_id,
+        receiver=request.user  # or sender — adjust logic as needed
+    )
 
-        # Optional: require password confirmation
-        # from django.contrib.auth import authenticate
-        # password = request.POST.get("password")
-        # if not authenticate(username=user.username, password=password):
-        #     messages.error(request, "Incorrect password.")
-        #     return redirect("delete_user")
+    # Get root + all replies in ONE optimized query
+    thread = root_message.get_thread()
 
-        user.delete()  # Triggers CASCADE + post_delete signal
+    # Alternative: Use prefetch_related for tree structure (advanced)
+    # messages = Message.objects.filter(
+    #     parent_message__isnull=True,
+    #     receiver=request.user
+    # ).prefetch_related(
+    #     Prefetch("replies", queryset=Message.objects.select_related("sender", "receiver"))
+    # )
 
-        messages.success(request, f"Account '{username}' has been permanently deleted.")
-        return redirect("home")  # or login page
-
-    return render(request, "messaging/delete_account.html")
+    context = {
+        "thread": thread,
+        "root_message": root_message.get_root(),
+    }
+    return render(request, "messaging/thread.html", context)
