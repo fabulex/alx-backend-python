@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Models for the messaging application — with full edit history."""
+"""Models with automatic cleanup via CASCADE."""
 
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -9,7 +9,6 @@ User = get_user_model()
 
 
 class Message(models.Model):
-    """Private message with full edit tracking."""
     sender = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -29,7 +28,6 @@ class Message(models.Model):
         null=True,
         blank=True,
         related_name="edited_messages",
-        help_text="Last user who edited this message",
     )
     is_read = models.BooleanField(default=False)
 
@@ -40,13 +38,8 @@ class Message(models.Model):
             models.Index(fields=["edited_at"]),
         ]
 
-    def __str__(self) -> str:
-        edited = " (edited)" if self.edited_at else ""
-        return f"{self.sender} → {self.receiver}: {self.content[:30]}{edited}"
-
 
 class MessageHistory(models.Model):
-    """Complete audit trail — every edit saves old content + who edited."""
     message = models.ForeignKey(
         Message,
         on_delete=models.CASCADE,
@@ -60,13 +53,8 @@ class MessageHistory(models.Model):
         null=True,
         blank=True,
         related_name="message_edits",
-        help_text="User who made this edit",
     )
 
     class Meta:
         ordering = ["-edited_at"]
         verbose_name_plural = "Message History"
-
-    def __str__(self) -> str:
-        editor = self.edited_by or "Unknown"
-        return f"Edit by {editor} on {self.edited_at.date()}"
