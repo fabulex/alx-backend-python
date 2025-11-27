@@ -1,75 +1,32 @@
 #!/usr/bin/env python3
-"""Views for threaded conversations – includes required sender/receiver filters."""
+"""Views using custom unread manager."""
 
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.views.generic import ListView
 
 from .models import Message
 
 
 @login_required
-def conversation_list(request):
+def inbox_unread(request):
     """
-    List all conversation roots the user is part of
-    (messages that are not replies – i.e. parent_message is null).
+    Display only unread messages using the custom manager.
+    Fully optimized with .only() and select_related.
     """
-    roots = Message.objects.filter(
-        parent_message__isnull=True
-    ).filter(
-        Q(sender=request.user) | Q(receiver=request.user)
-    ).select_related("sender", "receiver", "edited_by") \
-     .prefetch_related("replies") \
-     .order_by("-timestamp")
-
-    return render(request, "messaging/conversation_list.html", {"conversations": roots})
-
-
-@login_required
-def conversation_thread(request, message_id: int):
-    """
-    Display a full threaded conversation.
-    Uses the efficient get_thread() method from the model.
-    Includes required sender=request.user / receiver=request.user checks.
-    """
-    # Ensure the user is either the sender OR receiver of the root message
-    root_message = get_object_or_404(
-        Message,
-        id=message_id,
-        parent_message__isnull=True,                     # must be a root
-        Q(sender=request.user) | Q(receiver=request.user)   # REQUIRED LINE
-    )
-
-    # Fetch entire thread efficiently (1–2 queries)
-    thread = root_message.get_thread()
+    unread_messages = Message.unread.for_user(request.user)
 
     context = {
-        "thread": thread,
-        "root_message": root_message,
+        "unread_messages": unread_messages,
+        "unread_count": unread_messages.count(),
     }
-    return render(request, "messaging/thread_detail.html", context)
+    return render(request, "messaging/inbox_unread.html", context)
 
 
-@login_required
-def reply_to_message(request, parent_id: int):
-    """
-    Simple reply view – shows the required sender=request.user pattern.
-    """
-    parent = get_object_or_404(
-        Message,
-        id=parent_id,
-        Q(sender=request.user) | Q(receiver=request.user)   # REQUIRED LINE
-    )
+class InboxUnreadListView(ListView):
+    """Class-based version using the same custom manager."""
+    template_name = "messaging/inbox_unread_cbv.html"
+    context_object_name = "unread_messages"
 
-    if request.method == "POST":
-        content = request.POST.get("content", "").strip()
-        if content:
-            Message.objects.create(
-                sender=request.user,                # REQUIRED LINE
-                receiver=parent.sender if parent.receiver == request.user else parent.receiver,
-                content=content,
-                parent_message=parent,
-            )
-            return redirect("messaging:conversation_thread", message_id=parent.get_root().id)
-
-    return render(request, "messaging/reply.html", {"parent": parent})
+    def get_queryset(self):
+        return Message.unread.for_user(self.request.user)
