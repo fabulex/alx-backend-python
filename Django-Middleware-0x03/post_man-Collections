@@ -1,0 +1,267 @@
+{
+  "info": {
+    "_postman_id": "alx-messaging-app-tests",
+    "name": "ALX Messaging App - Full Tests",
+    "description": "Complete test suite for the messaging_app project (ALX Backend Python)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User A",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "exec": ["pm.environment.set(\"user_a_email\", \"usera@example.com\")"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_a_email}}\",\n  \"password\": \"password123\",\n  \"first_name\": \"User\",\n  \"last_name\": \"A\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users/", "host": ["{{base_url}}"], "path": ["api", "users", ""] }
+          },
+          "response": []
+        },
+        {
+          "name": "Register User B",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"userb@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"User\",\n  \"last_name\": \"B\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users/", "host": ["{{base_url}}"], "path": ["api", "users", ""] }
+          },
+          "response": []
+        },
+        {
+          "name": "Login User A → Save Tokens",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.environment.set(\"access_token_a\", json.access);",
+                  "pm.environment.set(\"refresh_token_a\", json.refresh);",
+                  "pm.environment.set(\"user_a_id\", json.user.user_id);",
+                  "console.log('User A logged in');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_a_email}}\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/token/", "host": ["{{base_url}}"], "path": ["api", "token", ""] }
+          },
+          "response": []
+        },
+        {
+          "name": "Login User B → Save Tokens",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.environment.set(\"access_token_b\", json.access);",
+                  "pm.environment.set(\"user_b_id\", json.user.user_id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"userb@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/token/", "host": ["{{base_url}}"], "path": ["api", "token", ""] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Conversations",
+      "item": [
+        {
+          "name": "User A Creates Conversation with User B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.environment.set(\"conversation_id\", json.conversation_id);",
+                  "console.log('Conversation created:', json.conversation_id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token_a}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{base_url}}/api/conversations/", "host": ["{{base_url}}"], "path": ["api", "conversations", ""] }
+          },
+          "response": []
+        },
+        {
+          "name": "User A Adds User B to Conversation",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": оставить "token", "value": "{{access_token_a}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_b_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/add_participant/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations", "{{conversation_id}}", "add_participant", ""]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List My Conversations (User A)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test(\"Has conversations\", () => pm.response.json().length > 0);"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token_a}}" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/conversations/", "host": ["{{base_url}}"], "path": ["api", "conversations", ""] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Messages",
+      "item": [
+        {
+          "name": "User A Sends Message",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token_a}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message_body\": \"Hello from User A!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations", "{{conversation_id}}", "messages", ""]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User B Sends Message",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token_b}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message_body\": \"Hey User A, what's up?\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations", "{{conversation_id}}", "messages", ""]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fetch Messages with Pagination & Filter",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token_a}}" }] },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/?page=1&sender={{user_a_id}}&sent_after=2025-11-01T00:00:00Z",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations", "{{conversation_id}}", "messages", ""],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "sender", "value": "{{user_a_id}}" },
+                { "key": "sent_after", "value": "2025-11-01T00:00:00Z" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Security Tests",
+      "item": [
+        {
+          "name": "Unauthorized Access to Private Conversation (No Token)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations", "{{conversation_id}}", "messages", ""]
+            }
+          },
+          "response": [],
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test(\"Status 401\", () => pm.response.to.have.status(401));"], "type": "text/javascript" } }
+          ]
+        },
+        {
+          "name": "User B Tries to Access Non-Participant Conversation (403)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "exec": ["// First create a private convo that B is NOT in", "pm.sendRequest({\n  url: pm.environment.get('base_url') + '/api/conversations/',\n  method: 'POST',\n  header: { 'Authorization': 'Bearer ' + pm.environment.get('access_token_a') },\n  body: { mode: 'raw', raw: '{}' }\n}, (err, res) => {\n  if (!err) pm.environment.set('private_conv_id', res.json().conversation_id);\n});"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token_b}}" }] },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{private_conv_id}}/messages/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations", "{{private_conv_id}}", "messages", ""]
+            }
+          },
+          "response": [],
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test(\"Status 403 or 404\", () => pm.response.to.have.status(403) || pm.response.to.have.status(404));"], "type": "text/javascript" } }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000", "type": "string" }
+  ]
+}
