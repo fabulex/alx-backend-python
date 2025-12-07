@@ -1,0 +1,26 @@
+# Core Django Framework
+Django==5.2.8
+
+# Django REST Framework for API
+djangorestframework==3.15.2
+
+# JWT Authentication
+djangorestframework-simplejwt==5.3.1
+
+# Filtering support for querysets
+django-filter==24.3
+
+# PostgreSQL database adapter
+psycopg2-binary==2.9.9
+
+# Environment variable management (for SECRET_KEY, DEBUG, etc.)
+python-decouple==3.8
+
+# ASGI server for production (optional but recommended)
+# daphne==4.1.0
+
+# Gunicorn for production deployment (optional)
+# gunicorn==21.2.0
+
+# Whitenoise for serving static files (optional but recommended)
+# whitenoise==6.6.0
