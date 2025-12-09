@@ -8,12 +8,7 @@ services:
       # --- Postgres (real) ---
       POSTGRES_DB: messaging_app_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Sxeteaact2p9
-
-      # --- MySQL (for checker compliance only) ---
-      MYSQL_DB: messaging_app_db
-      MYSQL_USER: postgres
-      MYSQL_PASSWORD: Sxeteaact2p9
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -42,17 +37,9 @@ services:
       - DB_HOST=db
       - DB_NAME=messaging_app_db
       - DB_USER=postgres
-      - DB_PASSWORD=Sxeteaact2p9
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_PORT=5432
-
-      # MySQL vars for checker keyword tests
-      - MYSQL_DB=messaging_app_db
-      - MYSQL_USER=postgres
-      - MYSQL_PASSWORD=Sxeteaact2p9
-
       - DEBUG=True
-      - ALLOWED_HOSTS=*
-      - SECRET_KEY=django-insecure-mysecretkey12345
 
     depends_on:
       db:
