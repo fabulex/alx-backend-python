@@ -1,0 +1,150 @@
+#!/bin/bash
+
+# kurbeScript - Kubernetes Local Setup Script
+# Purpose: Start Minikube cluster, verify installation, and retrieve pods
+# Location: messaging_app/kurbeScript
+
+set -e  # Exit on error
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored messages
+print_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+print_info "======================================"
+print_info "Kubernetes Local Setup Script"
+print_info "======================================"
+echo ""
+
+# Step 1: Check if Minikube is installed
+print_info "Step 1: Checking if Minikube is installed..."
+if command_exists minikube; then
+    MINIKUBE_VERSION=$(minikube version --short 2>/dev/null || echo "unknown")
+    print_success "Minikube is installed: $MINIKUBE_VERSION"
+else
+    print_error "Minikube is not installed!"
+    print_info "Please install Minikube first:"
+    print_info "  curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64"
+    print_info "  sudo install minikube-linux-amd64 /usr/local/bin/minikube"
+    exit 1
+fi
+echo ""
+
+# Step 2: Check if kubectl is installed
+print_info "Step 2: Checking if kubectl is installed..."
+if command_exists kubectl; then
+    KUBECTL_VERSION=$(kubectl version --client --short 2>/dev/null || kubectl version --client 2>/dev/null | head -n 1)
+    print_success "kubectl is installed: $KUBECTL_VERSION"
+else
+    print_warning "kubectl is not installed. Minikube can provide kubectl."
+    print_info "You can use: alias kubectl='minikube kubectl --'"
+fi
+echo ""
+
+# Step 3: Check Minikube status
+print_info "Step 3: Checking current Minikube status..."
+MINIKUBE_STATUS=$(minikube status --format='{{.Host}}' 2>/dev/null || echo "Stopped")
+if [ "$MINIKUBE_STATUS" = "Running" ]; then
+    print_success "Minikube cluster is already running"
+else
+    print_info "Minikube cluster is not running. Starting now..."
+fi
+echo ""
+
+# Step 4: Start Minikube cluster
+print_info "Step 4: Starting Minikube cluster..."
+print_info "This may take a few minutes on first run..."
+if minikube start; then
+    print_success "Minikube cluster started successfully!"
+else
+    print_error "Failed to start Minikube cluster"
+    exit 1
+fi
+echo ""
+
+# Wait a moment for cluster to stabilize
+sleep 3
+
+# Step 5: Verify cluster is running using kubectl cluster-info
+print_info "Step 5: Verifying cluster with 'kubectl cluster-info'..."
+echo "----------------------------------------"
+if kubectl cluster-info; then
+    echo "----------------------------------------"
+    print_success "Cluster is running and accessible!"
+else
+    print_error "Failed to get cluster info"
+    exit 1
+fi
+echo ""
+
+# Step 6: Get cluster nodes
+print_info "Step 6: Retrieving cluster nodes..."
+echo "----------------------------------------"
+kubectl get nodes
+echo "----------------------------------------"
+print_success "Node information retrieved"
+echo ""
+
+# Step 7: Retrieve available pods
+print_info "Step 7: Retrieving available pods from all namespaces..."
+echo "----------------------------------------"
+POD_COUNT=$(kubectl get pods --all-namespaces --no-headers 2>/dev/null | wc -l)
+if [ "$POD_COUNT" -eq 0 ]; then
+    print_warning "No pods found in the cluster yet"
+    print_info "This is normal for a fresh cluster. System pods may still be starting."
+else
+    kubectl get pods --all-namespaces
+    print_success "Found $POD_COUNT pod(s)"
+fi
+echo "----------------------------------------"
+echo ""
+
+# Step 8: Display additional cluster information
+print_info "Step 8: Additional cluster information..."
+echo "----------------------------------------"
+print_info "Minikube IP: $(minikube ip 2>/dev/null || echo 'N/A')"
+print_info "Kubernetes version: $(kubectl version --short 2>/dev/null | grep Server || echo 'N/A')"
+print_info "Available namespaces:"
+kubectl get namespaces
+echo "----------------------------------------"
+echo ""
+
+# Summary
+print_success "======================================"
+print_success "Setup Complete!"
+print_success "======================================"
+echo ""
+print_info "Your Kubernetes cluster is ready to use!"
+print_info ""
+print_info "Useful commands:"
+print_info "  • Check cluster status: minikube status"
+print_info "  • Access dashboard: minikube dashboard"
+print_info "  • Stop cluster: minikube stop"
+print_info "  • Delete cluster: minikube delete"
+print_info "  • View pods: kubectl get pods --all-namespaces"
+print_info "  • View services: kubectl get services --all-namespaces"
+echo ""
